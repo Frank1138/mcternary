@@ -1,6 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+alphapars=np.zeros(10)
+Lpars=np.zeros(10)
+Hpars=np.zeros(10)
+mandZandA=np.zeros(10)
+paxisandpP=np.zeros(6)
+DEpars=np.zeros(17)
+hatpars=np.zeros(14)
+energies=np.zeros(3)
+dD=np.zeros(7)
+
 def getLightMass(avemL, sigmL, A):
     '''
     The mass of the light fragment is sampled 
@@ -481,6 +491,12 @@ def getDEpars(mandZandA, DEpars,  Lpars, alphapars, t, hatpars):
 
 
 def getPalpha(alphapars, mandZandA):
+    '''
+    We calculate the total momentum of
+    alpha by multiplying each component
+    of the velocity by the mass, then by
+    using the Pythagorian theorem.
+    '''
     from math import pow
     pxalpha=mandZandA[2]*alphapars[3]
     pyalpha=mandZandA[2]*alphapars[4]
@@ -495,23 +511,27 @@ def getPalpha(alphapars, mandZandA):
     return temp
 
 
-def getdistanceL(alphapars, Lpars):
+def getdistance(alphapars, xpars):
     from math import pow
-    distanceL=pow((pow(alphapars[0]-Lpars[0], 2)+pow(alphapars[1]-Lpars[1], 2)+pow(alphapars[2]-Lpars[2], 2)), 0.5)
-    return distanceL
+    distance=pow((pow(alphapars[0]-xpars[0], 2)+pow(alphapars[1]-xpars[1], 2)+pow(alphapars[2]-xpars[2], 2)), 0.5)
+    return distance
 
-
+'''
 def getdistanceH(alphapars, Hpars):
     from math import pow
     distanceH=pow((pow(alphapars[0]-Hpars[0], 2)+pow(alphapars[1]-Hpars[1], 2)+pow(alphapars[2]-Hpars[2], 2)), 0.5)
     return distanceH
-
+'''
 
 def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
+    '''
+    This function calls all of the previous functions
+    to initialize all the paramaters before they are
+    passed into the numerical solver.
+    '''
     avemL=27.
     sigmL=3.
     M=232
-    actA=239.
     EKB_act_infinity=124
     EKB_act_sciss=114
     EKT_act_infinity=154
@@ -537,9 +557,9 @@ def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, h
     A=236
     t=4
     
-    mandZandA[0]=getLightMass(avemL, sigmL, A)
-    mandZandA[2:9]=getfragmentZandA(mandZandA, actA)
-    mandZandA[1]=getmH(mandZandA)
+    mandZandA[0]=getLightMass(avemL, sigmL, A) #assign mL
+    mandZandA[2:9]=getfragmentZandA(mandZandA, A) #assign malpha, ZL, ZH, Zalpha, AL, AH, Aalpha
+    mandZandA[1]=getmH(mandZandA) #assign mH
     energies=getE_alpha_scissandE_L_scissandE_H_sciss(EKB_act_infinity, EKB_act_sciss, EKT_act_infinity, deltaE_act, EKT_act_sciss, E_alpha_infinity)
     dD[2:4]=getd0andD0(mandZandA)
     dD[0:2]=getAvedandAveD(EKT_act_infinity, EKT_act_sciss, E_alpha_infinity, energies,mandZandA)
@@ -555,29 +575,12 @@ def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, h
     hatpars=gethatpars(mandZandA, DEpars,  Lpars, alphapars, t)
     DEpars[0:12]=getDEpars(mandZandA, DEpars,  Lpars, alphapars, t, hatpars)
     alphapars[6:10]=getPalpha(alphapars, mandZandA)
-    distanceL=getdistanceL(alphapars, Lpars)
-    distanceH=getdistanceH(alphapars, Hpars)
+    
 
     
     return alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies
 
 
-def writeresults(filename, results, label, mandZandA, alphapars, Lpars, Hpars):
-    '''
-    Once numerical solution for each equation 
-    of motion has been completed, write file 
-    to filename with particle trajectory data.
-    '''
-    
-    #matrix=np.array([alphapars, Lpars, Hpars, mandZandA])
-    writer=file('test.txt', 'a')
-    np.savetxt(writer, (mandZandA, alphapars, Lpars, Hpars), fmt='%.3f', header=label)
-    writer.close()
-    #!cat test.txt
-    #return matrix
-    #Does this return anything?
-    
-    
 def solveequationsofmotion(DEpars,hatpars,mandZandA, momentum, distanceL, distanceH):
     '''
     All of the preceding parameters are to 
@@ -606,7 +609,23 @@ def solveequationsofmotion(DEpars,hatpars,mandZandA, momentum, distanceL, distan
     #return xalpha, yalpha, zalpha, pxalpha, pyalpha, pzalpha, xL, yL, zL, xH, yH, zH
     
     
-def m(A, E, alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
+def writeresults(filename, results, label, mandZandA, alphapars, Lpars, Hpars):
+    '''
+    Once numerical solution for each equation 
+    of motion has been completed, write file 
+    to filename with particle trajectory data.
+    '''
+    
+    #matrix=np.array([alphapars, Lpars, Hpars, mandZandA])
+    writer=file('test.txt', 'a')
+    np.savetxt(writer, (mandZandA, alphapars, Lpars, Hpars), fmt='%.3f', header=label)
+    writer.close()
+    #!cat test.txt
+    #return matrix
+    #Does this return anything?
+    
+    
+def runMCTernary(A, E, alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
     
     e=0
     events=np.array([e,E])
@@ -614,8 +633,8 @@ def m(A, E, alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars,
         events[0]=events[0]+1
         alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies=initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies)
         
-        distanceL=getdistanceL(alphapars, Lpars)
-        distanceH=getdistanceH(alphapars, Hpars)
+        distanceL=getdistance(alphapars, Lpars)
+        distanceH=getdistance(alphapars, Hpars)
         momentum=alphapars[9]
         
         filename="test.txt"
