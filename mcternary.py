@@ -1,15 +1,38 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+'''
+alphapars, Lpars, and Hpars contain the coordinates,
+velocity components, momentum components, and 
+total momentum for the corresponding fragments.
+mandZandA contains the masses, charges, and mass
+numbers, for each fragment. It also contains a zero
+in order for it to have the same number of elements 
+as alphapars, Lpars, Hpars. This useful because it
+makes it easier to writes their values into file.
+paxisandpP contains the values for the prime axes
+as well as the momentum about the prime axes.
+dD contains the average and actual separation 
+distances in addition to Rc.
+DEpars contains the parameters in equations 7-9,
+11-13, and 22.
+Hatpars contains the variables in equations 10.
+energies contains the energies at scission of each 
+fragment.
+'''
+
 alphapars=np.zeros(10)
 Lpars=np.zeros(10)
 Hpars=np.zeros(10)
 mandZandA=np.zeros(10)
 paxisandpP=np.zeros(6)
+dD=np.zeros(7)
 DEpars=np.zeros(17)
 hatpars=np.zeros(14)
 energies=np.zeros(3)
-dD=np.zeros(7)
+
+
 
 def getLightMass(avemL, sigmL, A):
     '''
@@ -516,12 +539,6 @@ def getdistance(alphapars, xpars):
     distance=pow((pow(alphapars[0]-xpars[0], 2)+pow(alphapars[1]-xpars[1], 2)+pow(alphapars[2]-xpars[2], 2)), 0.5)
     return distance
 
-'''
-def getdistanceH(alphapars, Hpars):
-    from math import pow
-    distanceH=pow((pow(alphapars[0]-Hpars[0], 2)+pow(alphapars[1]-Hpars[1], 2)+pow(alphapars[2]-Hpars[2], 2)), 0.5)
-    return distanceH
-'''
 
 def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
     '''
@@ -626,7 +643,17 @@ def writeresults(filename, results, label, mandZandA, alphapars, Lpars, Hpars):
     
     
 def runMCTernary(A, E, alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
-    
+    '''
+This is the main function of the program. It
+takes the mass number of the desired nucleus and 
+number of events. It also takes the names of the arrays
+which contain the variables used throughout the code.
+Using these inputs, the function calls all of the helper
+functions in the library, and executes them in the correct
+sequence. Subsequently, the function returns the initial
+and final values of the coordinates, velocities and
+momenta of each of the fragments.
+'''
     e=0
     events=np.array([e,E])
     while events[0]<E:
