@@ -2,37 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-'''
-alphapars, Lpars, and Hpars contain the coordinates,
-velocity components, momentum components, and 
-total momentum for the corresponding fragments.
-mandZandA contains the masses, charges, and mass
-numbers, for each fragment. It also contains a zero
-in order for it to have the same number of elements 
-as alphapars, Lpars, Hpars. This useful because it
-makes it easier to writes their values into file.
-paxisandpP contains the values for the prime axes
-as well as the momentum about the prime axes.
-dD contains the average and actual separation 
-distances in addition to Rc.
-DEpars contains the parameters in equations 7-9,
-11-13, and 22.
-Hatpars contains the variables in equations 10.
-energies contains the energies at scission of each 
-fragment.
-'''
-
-alphapars=np.zeros(10)
-Lpars=np.zeros(10)
-Hpars=np.zeros(10)
-mandZandA=np.zeros(10)
-paxisandpP=np.zeros(6)
-dD=np.zeros(7)
-DEpars=np.zeros(17)
-hatpars=np.zeros(14)
-energies=np.zeros(3)
-
-
 
 def getLightMass(avemL, sigmL, A):
     '''
@@ -540,7 +509,7 @@ def getdistance(alphapars, xpars):
     return distance
 
 
-def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
+def initparameters():#alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
     '''
     This function calls all of the previous functions
     to initialize all the paramaters before they are
@@ -574,6 +543,17 @@ def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, h
     A=236
     t=4
     
+    #local arrays
+    alphapars=np.zeros(10)
+    Lpars=np.zeros(10)
+    Hpars=np.zeros(10)
+    mandZandA=np.zeros(10)
+    paxisandpP=np.zeros(6)
+    dD=np.zeros(7)
+    DEpars=np.zeros(17)
+    hatpars=np.zeros(14)
+    energies=np.zeros(3)
+    
     mandZandA[0]=getLightMass(avemL, sigmL, A) #assign mL
     mandZandA[2:9]=getfragmentZandA(mandZandA, A) #assign malpha, ZL, ZH, Zalpha, AL, AH, Aalpha
     mandZandA[1]=getmH(mandZandA) #assign mH
@@ -592,8 +572,6 @@ def initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, h
     hatpars=gethatpars(mandZandA, DEpars,  Lpars, alphapars, t)
     DEpars[0:12]=getDEpars(mandZandA, DEpars,  Lpars, alphapars, t, hatpars)
     alphapars[6:10]=getPalpha(alphapars, mandZandA)
-    
-
     
     return alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies
 
@@ -634,7 +612,7 @@ def writeresults(filename, results, label, mandZandA, alphapars, Lpars, Hpars):
     '''
     
     #matrix=np.array([alphapars, Lpars, Hpars, mandZandA])
-    writer=file('test.txt', 'a')
+    writer=file(filename, 'a')
     np.savetxt(writer, (mandZandA, alphapars, Lpars, Hpars), fmt='%.3f', header=label)
     writer.close()
     #!cat test.txt
@@ -642,44 +620,84 @@ def writeresults(filename, results, label, mandZandA, alphapars, Lpars, Hpars):
     #Does this return anything?
     
     
-def runMCTernary(A, E, alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies):
+def runMCTernary(A=239, E=10, filename="test.txt"):
     '''
-This is the main function of the program. It
-takes the mass number of the desired nucleus and 
-number of events. It also takes the names of the arrays
-which contain the variables used throughout the code.
-Using these inputs, the function calls all of the helper
-functions in the library, and executes them in the correct
-sequence. Subsequently, the function returns the initial
-and final values of the coordinates, velocities and
-momenta of each of the fragments.
-'''
-    e=0
+    This is the main function of the program. It
+    takes as arguments:
+        the mass number of the desired nucleus
+        the desired number of simulated events
+        the output filename for the simulated results
+    Using the inputs, it initializes arrays for all of the 
+    simulation parameters, performs the calculation to determine
+    the trajectories of the three fragments and writes the results 
+    (initial and final values of the coordinates, velocities and
+    momenta of each of the fragments) to the output file once the 
+    momentum of the alpha reaches 0.  
+    If the distance between the alpha and the fragments gets smaller than a
+    threshold value, this simulated event is thrown out and a new one is started.
+    The program continues until the desired number of events has been reached.
+    '''
+
+    #Initialize the arrays to store parameters and trajectory info.
+    alphapars=np.zeros(10) #contains the coordinates, velocity components, momentum components, 
+                           #and total momentum for the alphas
+    Lpars=np.zeros(10) #contains the coordinates, velocity components, momentum components,
+                       #and total momentum for the light fragment
+    Hpars=np.zeros(10) #contains the coordinates, velocity components, momentum components,
+                       #and total momentum for the heavy fragment
+    mandZandA=np.zeros(10) #contains the masses, charges, and mass numbers, for each fragment. 
+                           #It also contains a zero in order for it to have the same number of 
+                           #elements as alphapars, Lpars, Hpars. This useful because it
+                           #makes it easier to writes their values into file.
+    paxisandpP=np.zeros(6) #contains the values for the prime axes as well as the momentum 
+                           #about the prime axes.
+    dD=np.zeros(7) #contains the average and actual separation distances in addition to Rc.
+    DEpars=np.zeros(17) #contains the parameters in equations 7-9, 11-13, and 22 of Radi et al.
+    hatpars=np.zeros(14) #contains the variables in equations 10 of Radi et al.
+    energies=np.zeros(3) #contains the energies at scission of each fragment
+
+    #Set up the output file, clearing the contents 
+    writer=file(filename, 'w')
+
+    e=0 #counter for the number of events that are kept
     events=np.array([e,E])
+    
+    #Keep going until the number of events kept equals the number of events requested
+    #Sometimes we have to discard a simulated event if the momentum and/or distance criteria are not met
     while events[0]<E:
         events[0]=events[0]+1
-        alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies=initparameters(alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies)
         
+        #Initialize all the parameters
+        alphapars, Lpars, Hpars, mandZandA, paxisandpP, \
+        dD, DEpars, hatpars, energies \
+            = initparameters()#alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars, hatpars, energies)
+        
+        #Determine the starting distances between the alpha and the fragments
         distanceL=getdistance(alphapars, Lpars)
         distanceH=getdistance(alphapars, Hpars)
+        #Determine the starting momentum of the alpha
         momentum=alphapars[9]
         
-        filename="test.txt"
-        writer=file('test.txt', 'a')
+        #Save the event header for this event
+        #JLK: Will this have to wait until we know whether we are saving the event or not?
+        writer=file(filename, 'a')
         np.savetxt(writer, events, fmt='%d',header='event', newline=' ')
         writer.close()
+        #Write the starting positions, velocities, etc. for this event
         writeresults(filename, 1, "test datas", mandZandA, alphapars, Lpars, Hpars)
         
+        #Keep solving the equations of motion until the alpha momentum reaches zero or the
+        #distances get too close, in which case, start over
         while True:
-            #numerical solver
-            
-                momentum, distanceL, distanceH=solveequationsofmotion(DEpars,hatpars,mandZandA, momentum, distanceL, distanceH)
+            #call numerical solver
+            momentum, distanceL, distanceH = \
+                solveequationsofmotion(DEpars,hatpars,mandZandA, momentum, distanceL, distanceH)
     
-                if momentum<=0 or distanceL<=0.8 or distanceH<=0.8:
+            if momentum<=0 or distanceL<=0.8 or distanceH<=0.8:
                 #write end results
-                        print "Results"
-                        alphapars[9]=momentum
+                print "Results"
+                alphapars[9]=momentum
+                #Write the ending positions, velocities, etc.    
+                writeresults(filename, 1, "test datae", mandZandA, alphapars, Lpars, Hpars)
                     
-                        writeresults(filename, 1, "test datae", mandZandA, alphapars, Lpars, Hpars)
-                    
-                        break
+                break
