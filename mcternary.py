@@ -27,7 +27,7 @@ def getLightMass(avemL, sigmL, A):
     return mL#mandZandA
 
 
-def getfragmentZandA(mL, actA):
+def getfragmentZandA(mL, A):
     '''
      Let the charge of the light and heavy 
      fragment be expressed as variable name 
@@ -46,19 +46,31 @@ def getfragmentZandA(mL, actA):
     AL=95 #amu
     AH=232-AL #amu
     Aalpha=4 #amu
-    malpha=4 #amu
     
-    temp=np.zeros(7)
-    temp[0]=malpha
-    temp[1]=ZL
-    temp[2]=ZH
-    temp[3]=Zalpha
-    temp[4]=AL
-    temp[5]=AH
-    temp[6]=Aalpha
+    if AH%2==0 and ZH%2==0:
+        delta = ap/np.sqrt(AH)
+    if AH%2==0 and ZH%2!=0:
+        delta = -ap/np.sqrt(AH)
+    mH = av*AH - as1*AH**(0.666666666) - (ac*ZH*(ZH - 1.0))/(AH**(0.333333333)) - (asym*(AH - 2.0*ZH)**2)/(AH) + delta
+        
+    if Aalpha%2==0 and Zalpha%2==0:
+        delta = ap/np.sqrt(Aalpha)
+    if Aalpha%2==0 and Zalpha%2!=0:
+        delta = -ap/np.sqrt(Aalpha)
+    malpha = av*Aalpha - as1*Aalpha**(0.666666666) - (ac*Zalpha*(Zalpha - 1.0))/(Aalpha**(0.333333333)) - (asym*(Aalpha - 2.0*Zalpha**2)/(Aalpha) + delta
+                                                                                                           
+                                                                                                           temp=np.zeros(8)                                                                                                       
+    temp[0]=mH
+    temp[1]=malpha
+    temp[2]=ZL
+    temp[3]=ZH
+    temp[4]=Zalpha
+    temp[5]=AL
+    temp[6]=AH
+    temp[7]=Aalpha
     return temp
 
-
+'''
 def getmH(mZA):
     #Semi-empirical mass formula constant terms
     av = 15.5 #MeV
@@ -76,7 +88,7 @@ def getmH(mZA):
     B = av*mZA[7] - as1*mZA[7]**(2./3.) - (ac*mZA[4]*(mZA[4] - 1.0))/(mZA[7]**(1./3.)) - (asym*(mZA[7] - 2.0*mZA[4])**2)/(mZA[7]) + delta
     
     return B
-
+'''
 
 def getE_alpha_scissandE_L_scissandE_H_sciss(EKB_act_infinity, EKB_act_sciss, EKT_act_infinity, deltaE_act, EKT_act_sciss, E_alpha_infinity):
     '''
@@ -264,7 +276,12 @@ def getR0andV0andT0(mandZandA, DEpars):
     equation 12 and find T0 using equation 13.
     '''
     #Eventual code goes here
-    R0=4.86 #fm
+    r0=1.25 #fm
+    
+    RL=r0*mandZandA[6]**0.333333333
+    RH=r0*mandZandA[7]**0.333333333
+    
+    R0=(RL+RH)/2 #fm
     V0=(DEpars[15]+DEpars[16])/2 #c m/s
     T0=V0/R0 #1/c m/s
     
@@ -555,8 +572,7 @@ def initparameters():#alphapars, Lpars, Hpars, mandZandA, paxisandpP, dD, DEpars
     energies=np.zeros(3)
     
     mandZandA[0]=getLightMass(avemL, sigmL, A) #assign mL
-    mandZandA[2:9]=getfragmentZandA(mandZandA, A) #assign malpha, ZL, ZH, Zalpha, AL, AH, Aalpha
-    mandZandA[1]=getmH(mandZandA) #assign mH
+    mandZandA[1:9]=getfragmentZandA(mandZandA, A) #assign mH, malpha, ZL, ZH, Zalpha, AL, AH, Aalpha
     energies=getE_alpha_scissandE_L_scissandE_H_sciss(EKB_act_infinity, EKB_act_sciss, EKT_act_infinity, deltaE_act, EKT_act_sciss, E_alpha_infinity)
     dD[2:4]=getd0andD0(mandZandA)
     dD[0:2]=getAvedandAveD(EKT_act_infinity, EKT_act_sciss, E_alpha_infinity, energies,mandZandA)
